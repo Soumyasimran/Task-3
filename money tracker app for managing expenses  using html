@@ -1,0 +1,61 @@
+// server.js
+
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const app = express();
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/money_tracker', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+// Expense and Income Schema
+const transactionSchema = new mongoose.Schema({
+  amount: Number,
+  description: String,
+  type: String, // 'expense' or 'income'
+});
+
+const Transaction = mongoose.model('Transaction', transactionSchema);
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Routes
+app.get('/transactions', async (req, res) => {
+  try {
+    const transactions = await Transaction.find();
+    res.json(transactions);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/transactions', async (req, res) => {
+  const transaction = new Transaction({
+    amount: req.body.amount,
+    description: req.body.description,
+    type: req.body.type,
+  });
+
+  try {
+    const newTransaction = await transaction.save();
+    res.status(201).json(newTransaction);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+app.delete('/transactions/:id', async (req, res) => {
+  try {
+    await Transaction.deleteOne({ _id: req.params.id });
+    res.json({ message: 'Transaction deleted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(Server running on port ${PORT}));
